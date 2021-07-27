@@ -13,7 +13,7 @@ pipeline {
         stage('checkout') { 
             steps { 
                 script{
-                    git branch: 'main', credentialsId: 'https://github.com/RolandSaks/gist-check', url: 'https://github.com/RolandSaks/gist-check'
+                    git branch: 'main', credentialsId: 'github', url: 'https://github.com/RolandSaks/gist-check'
                 }
             }
         } 
