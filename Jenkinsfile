@@ -1,7 +1,7 @@
 
 pipeline { 
     environment { 
-        registry = "testgistpipe" 
+        registry = "testgistpipe/gist-checker" 
         registryCredential = 'dockerhub' 
         dockerImage = '' 
 
