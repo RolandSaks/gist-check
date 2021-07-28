@@ -17,7 +17,7 @@ pipeline {
                 }
             }
         } 
-      stage('Building our image') { 
+        stage('Building our image') { 
 
             steps { 
                 script { 
@@ -26,7 +26,7 @@ pipeline {
             } 
         }
 
-      stage('Deploy our image') { 
+        stage('Deploy our image') { 
             steps { 
                 script { 
                     docker.withRegistry( '', registryCredential ) { 
@@ -38,8 +38,8 @@ pipeline {
 
         stage('Cleaning up') { 
             steps { 
-                sh "docker rmi $registry:$BUILD_NUMBER" ´
+                sh "docker rmi $registry:$BUILD_NUMBER" 
             }
-        } */
+        } 
     }
 }
