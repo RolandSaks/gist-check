@@ -2,7 +2,7 @@
 pipeline { 
     environment { 
         registry = "gist-checker" 
-        registryCredential = 'dockerhub_id' 
+        registryCredential = 'dockerhub' 
         dockerImage = '' 
 
     }
@@ -26,7 +26,7 @@ pipeline {
             } 
         }
 
-        /*       stage('Deploy our image') { 
+      stage('Deploy our image') { 
             steps { 
                 script { 
                     docker.withRegistry( '', registryCredential ) { 
