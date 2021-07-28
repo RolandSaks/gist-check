@@ -38,7 +38,7 @@ def run() -> None:
 
     monitor = GitGistMonitor(GitGistMonitor.Parameters(usernames=USERNAMES,
                                                        callback=callback_func,
-                                                       interval=15))
+                                                       interval=400))
     monitor.start()
 
 
