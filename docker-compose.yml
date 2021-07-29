@@ -33,6 +33,7 @@ services:
         - WAIT_START_CMD=flask run --host=0.0.0.0
         - WAIT_SLEEP=60
         - WAIT_LOOPS=10
+        - GITHUB_USERNAMES=["articvox", "RolandSaks"]
     links:
      - elasticsearch
      - kibana
