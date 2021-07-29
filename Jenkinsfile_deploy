@@ -31,14 +31,14 @@ pipeline {
       }
     }
 
-    stage('ExecuteChangeset') {
-      steps {
-        script {
-          withAWS(credentials: iamCredentialsId, region: region) {
-            cfnExecuteChangeSet(changeSet: "gist-cheker-changeset", stack: "gist-checker", pollInterval: 2000, timeoutInMinutes: 65)
-          }
-        }
-      }
-    }
+#    stage('ExecuteChangeset') {
+#      steps {
+#        script {
+#          withAWS(credentials: iamCredentialsId, region: region) {
+#            cfnExecuteChangeSet(changeSet: "gist-cheker-changeset", stack: "gist-checker", pollInterval: 2000, timeoutInMinutes: 65)
+#          }
+#        }
+#      }
+#    }
   }
 }
