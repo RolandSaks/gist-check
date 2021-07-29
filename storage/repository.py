@@ -1,11 +1,9 @@
-import json
 import logging
 import os
 import pickle
-from datetime import datetime
 from typing import List
 
-from gitgist import GitGist
+from client.gitgist import GitGist
 
 HISTORY = os.path.join(os.path.dirname(__file__), 'history.pkl')
 GISTS = os.path.join(os.path.dirname(__file__), 'gists.pkl')
@@ -38,7 +36,7 @@ def save_log(update: dict) -> None:
 
         with open(HISTORY, 'wb') as o:
             pickle.dump(history, o, protocol=pickle.HIGHEST_PROTOCOL)
-            logging.debug("Logged.")
+            logging.debug("Request log updated.")
 
 
 def load_log() -> dict:

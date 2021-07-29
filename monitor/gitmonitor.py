@@ -8,10 +8,9 @@ from typing import List, Callable
 import schedule
 import time
 
-from gistsclient import GistsClient
-from repository import load_log, save_log
-
-log = logging.getLogger("RolandTest")
+from client.gistsclient import GistsClient
+from client.gitgist import GitGist
+from storage.repository import load_log, save_log
 
 
 class GitGistMonitor:
@@ -29,17 +28,19 @@ class GitGistMonitor:
             self.last_check_log[user] = last_checked_at
 
     def start(self) -> GitGistMonitor:
-        log.info("Starting GitHub Gist monitor. Check interval: %ss", self.parameters.interval)
+        logging.info("Starting GitHub Gist monitor. Check interval: %ss.", self.parameters.interval)
+        self.stop_event.clear()
 
         schedule.every(self.parameters.interval).seconds.do(self.check_gists)
         thread = threading.Thread(target=self.run_timer)
         thread.start()
 
-        self.check_gists()
-        return self
+        return self.check_gists()
 
     def stop(self) -> GitGistMonitor:
-        log.info("Stopping GitHub gist monitor.")
+        logging.info("Stopping GitHub Gist monitor.")
+
+        schedule.clear()
         self.stop_event.set()
         return self
 
@@ -48,18 +49,21 @@ class GitGistMonitor:
             schedule.run_pending()
             time.sleep(interval_s)
 
-    def check_gists(self) -> None:
+    def check_gists(self) -> GitGistMonitor:
         for user in self.parameters.usernames:
+            logging.info("Checking gists for user {}".format(user))
             gists = self.client.fetch_gists(user, self.last_check_log[user])
-            log.info("Found %s new gists for user %s.", len(gists), user)
+            logging.info("Found {} new gists for user {}.".format(len(gists), user))
+
             self.set_checked(user)
 
             if len(gists) > 0:
                 self.parameters.callback(user, gists)
 
+        return self
 
     def set_checked(self, user: str, timestamp: datetime = datetime.utcnow()) -> None:
-        self.last_check_log[user] = timestamp.isoformat()[:-4] + "Z"
+        self.last_check_log[user] = timestamp.strftime(GitGist.DATE_FORMAT)
         save_log(self.last_check_log)
 
     class Parameters:

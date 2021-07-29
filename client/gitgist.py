@@ -2,10 +2,10 @@ from __future__ import annotations
 
 
 class GitGist:
-    DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
+    DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
-    def __init__(self, id: str, owner: str, updated_at: str):
-        self.id = id
+    def __init__(self, gist_id: str, owner: str, updated_at: str):
+        self.gist_id = gist_id
         self.owner = owner
         self.updated_at = updated_at
 

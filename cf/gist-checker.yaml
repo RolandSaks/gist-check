@@ -1,0 +1,467 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: |
+  AWS CloudFormation template 
+
+Parameters:
+
+  VpcCIDR:
+    Description: VPC IP RANGE
+    Type: String
+    Default: 10.10.0.0/16
+
+  PublicSubnetACIDR:
+    Description: AZ A range
+    Type: String
+    Default: 10.10.10.0/24
+
+  PublicSubnetBCIDR:
+    Description: AZ B range
+    Type: String
+    Default: 10.10.11.0/24
+
+  DesiredCapacity:
+    Type: Number
+    Default: '1'
+    Description: Number of instances 
+
+  GistDockerImage:
+    Description: Docker iamge for pieptest app
+    Type: String
+    Default: testgistpipe/gist-checker:17
+
+  JenkinsDockerImage:
+    Description: Jenkins docker image
+    Type: String
+    Default: testgistpipe/jenkins:1   
+
+  Environment:
+    Description: An environment name 
+    Type: String
+    Default: development 
+
+Mappings:
+  AWSRegionToAMI:
+    eu-west-1:
+      AMIID: ami-08a2aed6e0a6f9c7d
+    eu-central-1:
+      AMIID: ami-08c148bb835696b45
+
+Resources:
+  #VPC resources
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Ref Environment
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Ref Environment
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub "${AWS::Region}a"
+      CidrBlock: !Ref PublicSubnetACIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment} Public Subnet (AZ1)
+
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Sub "${AWS::Region}b"
+      CidrBlock: !Ref PublicSubnetBCIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment} Public Subnet (AZ2)
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment} Public Routes
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnetA
+
+  PublicSubnetBRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnetB
+
+  # ECS
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+
+  ECSTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Volumes:
+        - Name: docker
+          Host:
+            SourcePath: /var/run/docker.sock
+      ContainerDefinitions:
+        - Name: gist-checker
+          MemoryReservation: 300
+          Hostname: gist-checker
+          Image: !Ref GistDockerImage
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /aws/ecs/gist
+              awslogs-create-group: 'true'
+              awslogs-region: !Ref AWS::Region
+          PortMappings:
+            - ContainerPort: 8080
+              HostPort: 80
+          EntryPoint:
+            - "/bin/bash"
+            - "-c"
+          Command:
+            - sh wait_to_start.sh   
+          Environment:
+            - Name: WAIT_COMMAND
+              Value: "timeout 300 bash -c "until curl --silent --output /dev/null http://elasticsearch:9200/_cat/health?h=st; do printf '.'; sleep 5; done; printf '\n'""
+            - Name: WAIT_START_CMD
+              Value: flask run --host=0.0.0.0
+            - Name: WAIT_SLEEP
+              Value: 20
+            - Name: WAIT_LOOPS
+              Value: 10
+
+          Links:
+            - kibana:kibana
+            - elasticsearch:elasticsearch    
+
+        - Name: kibana
+          MemoryReservation: 750
+          Hostname: kibana
+          Image: kibana:7.12.0
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /aws/ecs/kibana
+              awslogs-create-group: 'true'
+              awslogs-region: !Ref AWS::Region 
+          PortMappings:
+            - ContainerPort: 5601
+              HostPort: 5601
+          Environment:
+            - Name: ELASTICSEARCH_URL
+              Value: http://elasticsearch:9200
+          Links:
+            - elasticsearch:elasticsearch       
+
+
+        - Name: elasticsearch
+          MemoryReservation: 750
+          Hostname: elasticsearch
+          Image: elasticsearch:7.12.0
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /aws/ecs/elasticsearch
+              awslogs-create-group: 'true'
+              awslogs-region: !Ref AWS::Region 
+          PortMappings:
+            - ContainerPort: 9200
+              HostPort: 9200
+          Environment:
+            - Name: discovery.type
+              Value: single-node
+            - Name: bootstrap.memory_lock
+              Value: "true"
+            - Name: ES_JAVA_OPTS
+              Value: -Xms512m -Xmx512m  
+
+        - Name: jenkins
+          MemoryReservation: 300
+          Hostname: jenkins
+          Image: !Ref JenkinsDockerImage
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /aws/ecs/jenkins
+              awslogs-create-group: 'true'
+              awslogs-region: !Ref AWS::Region 
+          PortMappings:
+            - ContainerPort: 8080
+              HostPort: 8080
+          MountPoints:
+            - ContainerPath: /var/run/docker.sock
+              SourceVolume: docker
+          Environment:
+            - Name: DOCKER_HOST
+              Value: "unix:///var/run/docker.sock"
+
+
+
+  ECSService:
+    Type: AWS::ECS::Service
+    DependsOn: ALBListener
+    Properties:
+      Cluster: !Ref ECSCluster
+      DesiredCount: !Ref DesiredCapacity
+      LoadBalancers:
+      - ContainerName: gist-checker
+        ContainerPort: 8080
+        TargetGroupArn: !Ref ECSTG
+      Role: !Ref ECSServiceRole
+      TaskDefinition: !Ref ECSTaskDefinition
+
+  ECSServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - ecs.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: /
+      Policies:
+      - PolicyName: ecs-service
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+              - elasticloadbalancing:DeregisterInstancesFromLoadBalancer
+              - elasticloadbalancing:DeregisterTargets
+              - elasticloadbalancing:Describe*
+              - elasticloadbalancing:RegisterInstancesWithLoadBalancer
+              - elasticloadbalancing:RegisterTargets
+              - ec2:Describe*
+              - ec2:AuthorizeSecurityGroupIngress
+            Resource: '*'
+
+  # Application Load Balancer
+  ElbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: EC2 Security Group
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  ECSALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: ECSALB
+      Scheme: internet-facing
+      LoadBalancerAttributes:
+      - Key: idle_timeout.timeout_seconds
+        Value: 30
+      Subnets:
+        - !Ref PublicSubnetA
+        - !Ref PublicSubnetB
+      SecurityGroups:
+        - !Ref ElbSecurityGroup
+
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    DependsOn: ECSServiceRole
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref ECSTG
+      LoadBalancerArn: !Ref ECSALB
+      Port: 80
+      Protocol: HTTP
+
+  ECSALBListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    DependsOn: ALBListener
+    Properties:
+      Actions:
+      - Type: forward
+        TargetGroupArn: !Ref ECSTG
+      Conditions:
+      - Field: path-pattern
+        Values: [/]
+      ListenerArn: !Ref ALBListener
+      Priority: 1
+
+  ECSTG:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    DependsOn: ECSALB
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /health
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      Name: ECSTG
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 5
+      VpcId: !Ref VPC
+
+  # EC2 AS
+  Ec2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: EC2 Security Group
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          FromPort: '0'
+          ToPort: '65535'
+          CidrIp: !Ref VpcCIDR
+        # For kibana
+        - IpProtocol: tcp
+          FromPort: '5601'
+          ToPort: '5601'
+          CidrIp: 0.0.0.0/0
+        # For Jenkins
+        - IpProtocol: tcp
+          FromPort: '8080'
+          ToPort: '8080'
+          CidrIp: 0.0.0.0/0     
+
+
+  EC2AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        - !Ref PublicSubnetA
+        - !Ref PublicSubnetB
+      LaunchConfigurationName: !Ref EC2LauncConfiguration
+      MinSize: 1
+      MaxSize: !Ref DesiredCapacity
+      DesiredCapacity: !Ref DesiredCapacity
+    UpdatePolicy:
+      AutoScalingReplacingUpdate:
+        WillReplace: "true"
+
+  EC2LauncConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: !FindInMap [AWSRegionToAMI, !Ref AWS::Region, AMIID]
+      SecurityGroups:
+        - !Ref Ec2SecurityGroup
+      InstanceType: t3.medium
+      KeyName: template
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          #Docker and ECS
+          sudo yum update -y
+          sudo amazon-linux-extras install -y docker ecs
+          sudo cat <<'EOF' >> /etc/ecs/ecs.config
+          ECS_CLUSTER=${ECSCluster}
+          EOF
+          # override ecs systemd conf. remove cloud-final.service dependancy https://github.com/aws/amazon-ecs-agent/issues/1707
+          sudo cat << 'EOF' > /usr/lib/systemd/system/ecs.service
+          [Unit]
+          Description=Amazon Elastic Container Service - container agent
+          Documentation=https://aws.amazon.com/documentation/ecs/
+          Requires=docker.service
+          After=docker.service
+
+          [Service]
+          Type=simple
+          Restart=on-failure
+          RestartSec=10s
+          EnvironmentFile=-/etc/ecs/ecs.config
+          ExecStartPre=/usr/libexec/amazon-ecs-init pre-start
+          ExecStart=/usr/libexec/amazon-ecs-init start
+          ExecStop=/usr/libexec/amazon-ecs-init stop
+          ExecStopPost=/usr/libexec/amazon-ecs-init post-stop
+
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+
+          sudo systemctl enable --now --no-block ecs.service
+          sudo service docker start
+          sudo service cloud-final start
+          sudo service ecs start
+
+
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - ec2.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: /
+      Policies:
+      - PolicyName: ecs-service
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+              - ecs:CreateCluster
+              - ecs:DeregisterContainerInstance
+              - ecs:DiscoverPollEndpoint
+              - ecs:Poll
+              - ecs:RegisterContainerInstance
+              - ecs:StartTelemetrySession
+              - ecs:UpdateContainerInstancesState
+              - ecs:Submit*
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - logs:CreateLogGroup
+              - ssm:UpdateInstanceInformation
+            Resource: '*'
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref EC2Role
+Outputs:
+  ECSService:
+    Value: !Ref ECSService
+  ECSCluster:
+    Value: !Ref ECSCluster
+  ECSTaskDefinition:
+    Value: !Ref ECSTaskDefinition
+  ECSALB:
+    Description: dns url
+    Value: !Join ['', [!GetAtt [ECSALB, DNSName]]]
+

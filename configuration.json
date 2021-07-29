@@ -1,0 +1,15 @@
+{
+  "gists": {
+    "monitor": {
+      "usernames": [
+        "RolandSaks",
+      ],
+      "interval": 90
+    }
+  },
+  "elasticsearch": {
+    "index": "pipedrive_test",
+    "host": "localhost",
+    "port": "9200"
+  }
+}

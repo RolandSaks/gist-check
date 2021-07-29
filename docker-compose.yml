@@ -26,17 +26,23 @@ services:
   gistchecker:
     build: .
     ports:
-     - "8082:8080"
+     - "80:8080"
     command: sh wait_to_start.sh
     environment:
-        - WAIT_COMMAND=[ $$(curl --write-out %{http_code} --silent --output /dev/null http://elasticsearch:9200/_cat/health?h=st) = 200 ]
-        - WAIT_START_CMD=flask run --host=0.0.0.0
+        - WAIT_COMMAND=timeout 300 bash -c "until curl --silent --output /dev/null http://elasticsearch:9200/_cat/health?h=st; do printf '.'; sleep 5; done; printf '\n'"
+        - WAIT_START_CMD=python3 main.py
         - WAIT_SLEEP=60
         - WAIT_LOOPS=10
-        - GITHUB_USERNAMES=["articvox", "RolandSaks"]
     links:
      - elasticsearch
      - kibana
+
+  jenkins:
+    image: testgistpipe/jenkins:1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 8080:8080   
 
 volumes:
   esdata:
