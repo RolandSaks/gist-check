@@ -26,11 +26,11 @@ services:
   gistchecker:
     build: .
     ports:
-     - "8080:8080"
+     - "8082:8080"
     command: sh wait_to_start.sh
     environment:
         - WAIT_COMMAND=[ $$(curl --write-out %{http_code} --silent --output /dev/null http://elasticsearch:9200/_cat/health?h=st) = 200 ]
-        - WAIT_START_CMD=python3 main.py
+        - WAIT_START_CMD=flask run --host=0.0.0.0
         - WAIT_SLEEP=60
         - WAIT_LOOPS=10
     links:
