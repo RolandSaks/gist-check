@@ -11,8 +11,6 @@ from storage.repository import save_gists
 from pipecrmdeal import create_new_deal
 from flask import Flask,jsonify
 
-
-
 app = Flask(__name__)
 
 @app.route("/health", methods=["GET"])

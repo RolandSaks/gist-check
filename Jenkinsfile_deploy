@@ -1,0 +1,44 @@
+// #!groovy
+
+def region = 'eu-west-1'
+iamCredentialsId = 'deploy'
+def buildNumber = Jenkins.instance.getItem('gist-image').lastSuccessfulBuild.number
+
+
+pipeline {
+  agent any
+
+  stages {
+    stage('Prepare') {
+      steps {
+        cleanWs()
+      }
+    }
+
+    stage('CreateChangeset') {
+      steps {
+        script {
+            withAWS(credentials: iamCredentialsId, region: region) {
+
+              // Set CloudFormation stack parameters that change over builds
+              def changeSetParams = [
+                            "GistDockerImage": "testgistpipe/gist-checker:${buildNumber}",
+                          ]
+
+              cfnCreateChangeSet(changeSet: "gist-cheker-changeset", stack: "gist-checker", params: changeSetParams)
+            }
+        }
+      }
+    }
+
+    stage('ExecuteChangeset') {
+      steps {
+        script {
+          withAWS(credentials: iamCredentialsId, region: region) {
+            cfnExecuteChangeSet(changeSet: "gist-cheker-changeset", stack: "gist-checker", pollInterval: 2000, timeoutInMinutes: 65)
+          }
+        }
+     }
+   }
+  }
+}
