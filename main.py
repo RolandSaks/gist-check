@@ -13,7 +13,8 @@ from gitmonitor import GitGistMonitor
 from repository import save_gists, load_gists
 from pipecrmdeal import create_new_deal
 
-USERNAMES = os.environ("GITHUB_USERNAMES")
+USERNAMES_STR = os.getenv("GITHUB_USERNAMES")
+USERNAMES = USERNAMES_STR.split(",")
 
 # logging.basicConfig(level=logging.INFO)
 handler = CMRESHandler(hosts=[{'host': 'elasticsearch', 'port': 9200}],
