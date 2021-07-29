@@ -1,7 +1,6 @@
-# gist-check
 
 # Github Gist Checker
-## 1. Github API & Pipedrive API
+## 1. Application
 
 Python application which is checking github user gists and creates crm deal in pipedrive company.
 
