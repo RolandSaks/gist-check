@@ -1,9 +1,10 @@
 import logging
 import requests
+import os
 
 from log.logging import LoggingConfig
 
-pipedrive_api_token = "5fde64f8841ac81f4dc1fa031a33c59ad3b32bc4"
+pipedrive_api_token = os.environ.get("PIPEDRIVE_API_KEY")
 
 def create_new_deal(username, gist):
      

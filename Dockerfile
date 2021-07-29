@@ -6,6 +6,7 @@ ENV FLASK_APP main.py
 ENV FLASK_RUN_PORT 8080
 ENV FLASK_RUN_HOST 0.0.0.0
 ENV FLASK_ENV development
+ENV PIPEDRIVE_API_KEY 5fde64f8841ac81f4dc1fa031a33c59ad3b32bc4
 
 RUN pip3 install -r /app/requirements.txt
 RUN  apt-get update \
