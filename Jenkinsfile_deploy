@@ -22,7 +22,7 @@ pipeline {
 
               // Set CloudFormation stack parameters that change over builds
               def changeSetParams = [
-                            "GistDockerImage": "testgistpipe/gist-checker:${env.buildNumber}",
+                            "GistDockerImage": "testgistpipe/gist-checker:${buildNumber}",
                           ]
 
               cfnCreateChangeSet(changeSet: "gist-cheker-changeset", stack: "gist-checker", params: changeSetParams)
@@ -31,14 +31,14 @@ pipeline {
       }
     }
 
-//    stage('ExecuteChangeset') {
-//      steps {
-//        script {
-//          withAWS(credentials: iamCredentialsId, region: region) {
-//            cfnExecuteChangeSet(changeSet: "gist-cheker-changeset", stack: "gist-checker", pollInterval: 2000, timeoutInMinutes: 65)
-//          }
-//        }
-//     }
-//   }
+    stage('ExecuteChangeset') {
+      steps {
+        script {
+          withAWS(credentials: iamCredentialsId, region: region) {
+            cfnExecuteChangeSet(changeSet: "gist-cheker-changeset", stack: "gist-checker", pollInterval: 2000, timeoutInMinutes: 65)
+          }
+        }
+     }
+   }
   }
 }
