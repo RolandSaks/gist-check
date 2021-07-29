@@ -4,11 +4,18 @@
 
 Python application which is checking github user gists and creates crm deal in pipedrive company.
 
-## 2. Launch cloudformation template fail.
+## 2. Locally
 
-In order to build a docker image run the following command from the projects root directory
+In order to build a application locally
 
-    docker build -t gist-checker .
+    docker-compose up -d
+    
+You will receive 4 conteiners = gistchecker, kibana, elasticsearch, jenkins.
+
+(<img width="1212" alt="Screenshot 2021-07-30 at 01 25 04" src="https://user-images.githubusercontent.com/15733762/127573415-71eab95d-ef4b-4e5f-bfa8-3203a1aaf55b.png">
+
+
+
 
 ## 3. Configuration
 
