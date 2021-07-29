@@ -24,7 +24,8 @@ You will receive 4 conteiners = gistchecker, kibana, elasticsearch, jenkins.
 
 <img width="1680" alt="Screenshot 2021-07-30 at 01 32 42" src="https://user-images.githubusercontent.com/15733762/127574001-ed270ebe-27b2-4c20-af01-7b9a7d932b91.png">
 
-Pipeline gist-image is a pipeline which will build a docker image and push it to docker hub.
+Pipeline gist-image is a pipeline which will build a docker image and push it to docker hub. 
+
 Pipeline gist-application-deploy is a pipeline which will create a cf stack with a latest succesfull gist-image tag and execute this changeset
 
 
@@ -35,6 +36,7 @@ Configuration is done in configuration.json file.
 ## 5. Run application aws
 Application can be launched into the aws via cf/gist-checker.yaml template. It will create a ecs with 4 the same conteiners = gistchecker, kibana, elasticsearch, jenkins.
 
-Kibana is accessbile from <Ec2PublicIP>:5601
-Jenkins is accessible from <Ec2PublicIP>:8080
+Kibana is accessbile from "<Ec2PublicIP:5601"
+
+Jenkins is accessible from "<Ec2PublicIP:8080"
     
