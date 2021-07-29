@@ -8,9 +8,7 @@ Python application which is checking github user gists and creates crm deal in p
 
 In order to build a application locally. 
 
-    1) Change in configuration.js file "host": "elasticsearch", to "host": "localhost"
-
-    2) docker-compose up -d
+    1) docker-compose up -d
     
 You will receive 4 conteiners = gistchecker, kibana, elasticsearch, jenkins.
 
@@ -38,11 +36,11 @@ Configuration is done in configuration.json file.
 ## 5. Run application aws
 Application can be launched into the aws via cf/gist-checker.yaml template. 
 
-Before launching to cloud then please revert configuration changes in step1.
+Before launching to cloud then please make configuration changes, so that elasticsearch host would be docker container name.
 
-Change in configuration.js file "host": "localhost", to "host": "elasticsearch"
+ 1) configuration.js file "host": "localhost", to "host": "elasticsearch"
 
-It will create a ecs with 4 the same conteiners = gistchecker, kibana, elasticsearch, jenkins.
+It will create same 4 applications to aws  = gistchecker, kibana, elasticsearch, jenkins.
 
 Kibana is accessbile from "<Ec2PublicIP:5601"
 
