@@ -9,7 +9,7 @@
   },
   "elasticsearch": {
     "index": "pipedrive_test",
-    "host": "localhost",
+    "host": "elasticsearch",
     "port": "9200"
   }
 }
