@@ -20,13 +20,13 @@ def heartbeat():
 
 
 def callback_func(user, gists: List[GitGist]) -> None:
-    logging.info("Monitor reported user [%s] gists: %s", user, [x.gist_id for x in gists])
+    logging.info("Monitor reported back [USER: {}] gists {}"
+                 .format(user, [x.gist_id for x in gists]))
 
     if gists:
         save_gists(gists)
-        id = [x.gist_id for x in gists]
-        for username in id:
-           create_new_deal(user, username)
+        for id in [x.gist_id for x in gists]:
+            create_new_deal(user, id)
 
 
 def init_monitor() -> None:
