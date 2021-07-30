@@ -33,8 +33,8 @@ services:
         - WAIT_START_CMD=flask run --host=0.0.0.0
         - WAIT_SLEEP=60
         - WAIT_LOOPS=10
-        - PIPEDRIVE_API_KEY=5fde64f8841ac81f4dc1fa031a33c59ad3b32bc4
-        - PIPEDRIVE_COMPANY=rolandtestcompnay
+        - PIPEDRIVE_API_KEY=yourapikey
+        - PIPEDRIVE_COMPANY=yourcompanyname
     links:
      - elasticsearch
      - kibana
