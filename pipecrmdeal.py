@@ -5,11 +5,12 @@ import os
 from log.logging import LoggingConfig
 
 pipedrive_api_token = os.environ.get("PIPEDRIVE_API_KEY")
+pipedrive_company = os.environ.get("PIPEDRIVE_COMPANY")
 
 def create_new_deal(username, gist):
      
     # Create new deal in CRM
-    create_deal_url = "https://rolandtestcompnay.pipedrive.com/api/v1/deals?api_token="
+    create_deal_url = "https://{}.pipedrive.com/api/v1/deals?api_token=".format(pipedrive_company)
     logging.info("Request to Pipedrive {}".format(create_deal_url))
     create_deal_response = requests.post(create_deal_url + pipedrive_api_token, data={"org_id": gist, "title": username})
     logging.info("Received response from Pipedrive for {} id".format(gist))

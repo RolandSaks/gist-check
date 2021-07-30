@@ -25,10 +25,20 @@ Parameters:
     Description: Number of instances 
 
   GistDockerImage:
-    Description: Docker iamge for pieptest app
+    Description: Docker image for pipetest app
     Type: String
     Default: testgistpipe/gist-checker:17
 
+  PipeDriveCompany:
+    Description: Pipedrive Company name
+    Type: String
+    Default: rolandtestcompnay
+    
+  PipeDriveApiKey:
+    Description: Pipedrive Api Key
+    Type: String
+    NoEcho: true  
+    
   JenkinsDockerImage:
     Description: Jenkins docker image
     Type: String
@@ -153,13 +163,17 @@ Resources:
             - sh wait_to_start.sh   
           Environment:
             - Name: WAIT_COMMAND
-              Value: "timeout 300 bash -c "until curl --silent --output /dev/null http://elasticsearch:9200/_cat/health?h=st; do printf '.'; sleep 5; done; printf '\n'""
+              Value: timeout 300 bash -c "until curl --silent --output /dev/null http://elasticsearch:9200/_cat/health?h=st; do printf '.'; sleep 5; done; printf '\n'
             - Name: WAIT_START_CMD
               Value: flask run --host=0.0.0.0
             - Name: WAIT_SLEEP
               Value: 20
             - Name: WAIT_LOOPS
               Value: 10
+            - Name: PIPEDRIVE_API_KEY
+              Value: !Ref PipeDriveApiKey
+            - Name: PIPEDRIVE_COMPANY
+              Value: !Ref PipeDriveCompany
 
           Links:
             - kibana:kibana
